@@ -1,71 +1,129 @@
-import products, { orders as mockOrders } from './data.js';
 import { supabase } from './lib/supabaseClient.js';
-
-const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export const productService = {
   async getAll() {
-    if (USE_SUPABASE) {
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) throw error;
-      return data;
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
     }
-    return products;
+      console.log('[DEBUG] Attempting Supabase query...');
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        console.log('[DEBUG] Query completed. Error:', error?.message || 'none');
+        console.log('[DEBUG] Data received:', data?.length || 0, 'items');
+        
+        if (error) {
+          console.error('[ERROR] Supabase query failed:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error; // Don't silently fail
+        }
+        
+        if (data && data.length > 0) {
+          console.log('[SUCCESS] Returning Supabase data. First ID:', data[0].id);
+          return data;
+        }
+        throw new Error('Supabase returned empty array');
+      } catch (err) {
+        console.error('[ERROR] Unexpected error in productService.getAll():', err.message);
+        throw err;
+      }
   },
 
   async getById(id) {
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', id)
         .single();
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) {
+        if (error.code !== 'PGRST116') {
+          console.error(`❌ Supabase error fetching product ${id}:`, error.message);
+        }
+        throw error;
+      }
       return data;
+    } catch (err) {
+      console.error(`❌ Unexpected error fetching product ${id}:`, err.message);
+      throw err;
     }
-    return products.find(p => p.id == id);
   },
 
   async getByCategory(category) {
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .ilike('category', category);
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error(`❌ Supabase error fetching category ${category}:`, error.message);
+        throw error;
+      }
+      return data || [];
+    } catch (err) {
+      console.error(`❌ Unexpected error fetching category ${category}:`, err.message);
+      throw err;
     }
-    return products.filter(p => p.category.toLowerCase() === category.toLowerCase());
   }
 };
 
 export const orderService = {
   async getAll() {
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    try {
       const { data, error } = await supabase
         .from('orders')
         .select('*, order_items(*)');
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('❌ Supabase error fetching orders:', error.message);
+        throw error;
+      }
+      return data || [];
+    } catch (err) {
+      console.error('❌ Unexpected error fetching orders:', err.message);
+      throw err;
     }
-    return mockOrders;
   },
 
   async getById(id) {
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    try {
       const { data, error } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('id', id)
         .single();
-      if (error) throw error;
+      if (error) {
+        console.error(`❌ Supabase error fetching order ${id}:`, error.message);
+        throw error;
+      }
       return data;
+    } catch (err) {
+      console.error(`❌ Unexpected error fetching order ${id}:`, err.message);
+      throw err;
     }
-    return mockOrders.find(o => o.id == id);
   },
 
   async create(orderData) {
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    try {
       const { customer_email, items } = orderData;
       
       // Calculate total
@@ -106,20 +164,10 @@ export const orderService = {
       const { error: itemsError } = await supabase.from('order_items').insert(itemInserts);
       if (itemsError) throw itemsError;
 
-      // Ideally update stock here too (RPC recommended for atomicity)
-      
       return { ...order, items: validatedItems };
+    } catch (err) {
+      console.error('❌ Supabase order creation failed:', err.message);
+      throw err;
     }
-
-    // Mock implementation
-    const newOrder = {
-      id: mockOrders.length + 1,
-      order_number: `ORD-MOCK-${Date.now()}`,
-      ...orderData,
-      status: 'pending',
-      created_at: new Date().toISOString()
-    };
-    mockOrders.push(newOrder);
-    return newOrder;
   }
 };

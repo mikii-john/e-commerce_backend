@@ -2,13 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { productService, orderService } from './dataService.js';
-import { testConnection } from './lib/supabaseClient.js';
+import { supabase, testConnection } from './lib/supabaseClient.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
 
 // Middleware
 app.use(cors({
@@ -17,15 +16,11 @@ app.use(cors({
 app.use(express.json());
 
 // --- STARTUP CHECKS ---
-if (USE_SUPABASE) {
-  testConnection().then(connected => {
-    if (!connected) {
-      console.warn('⚠️  Supabase connection failed. Server will continue but Supabase-dependent features may fail.');
-    }
-  });
-} else {
-  console.log('ℹ️  Running in MOCK DATA mode.');
-}
+testConnection().then(connected => {
+  if (!connected) {
+    console.warn('⚠️  Supabase connection failed. Server will continue but Supabase-dependent features may fail.');
+  }
+});
 
 // Routes
 
@@ -115,24 +110,20 @@ app.get('/api/health', async (req, res) => {
     let dbStatus = 'disconnected';
     let dbDetails = {};
 
-    if (USE_SUPABASE) {
-      const { data, error } = await supabase.from('products').select('count', { count: 'exact', head: true }).limit(1);
-      if (!error) {
-        dbStatus = 'connected';
-        dbDetails = { latency: `${Date.now() - start}ms` };
-      } else {
-        dbStatus = 'error';
-        dbDetails = { error: error.message };
-      }
+    const { data, error } = await supabase.from('products').select('count', { count: 'exact', head: true }).limit(1);
+    if (!error) {
+      dbStatus = 'connected';
+      dbDetails = { latency: `${Date.now() - start}ms` };
     } else {
-      dbStatus = 'mock';
+      dbStatus = 'error';
+      dbDetails = { error: error.message };
     }
 
     res.status(200).json({
       status: 'up',
       timestamp: new Date().toISOString(),
       database: {
-        type: USE_SUPABASE ? 'supabase' : 'mock',
+        type: 'supabase',
         status: dbStatus,
         ...dbDetails
       },

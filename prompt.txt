@@ -1,0 +1,47 @@
+Build a high-end, premium e-commerce frontend that connects to my existing Node.js/Express backend. The design should be modern, sleek, and high-performance, using a "Glassmorphism" aesthetic with deep dark mode support and vibrant accent colors.
+
+### 🌐 Tech Stack Requirements:
+- **Framework**: Next.js 14+ (App Router) or React (Vite).
+- **Styling**: Tailwind CSS for a utility-first, responsive design.
+- **Animations**: Framer Motion for smooth transitions, hover effects, and page entries.
+- **Icons**: Lucide-React for clean, consistent iconography.
+- **State Management**: React Context or Zustand for the shopping cart.
+- **Data Fetching**: TanStack Query (React Query) for robust API synchronization and caching.
+
+### 🛠️ API Integration (Crucial):
+The frontend must integrate with the following backend endpoints (Base URL: http://localhost:5000):
+
+1. **Get All Products**: `GET /api/products`
+   - Returns: `{ success: true, data: [ { id, name, description, price, category, image_url, stock } ] }`
+   - Role: Used for the main shop landing page and product grids.
+
+2. **Get Product by ID**: `GET /api/products/:id`
+   - Returns: `{ success: true, data: { product_details } }`
+   - Role: Used for the Product Detail page.
+
+3. **Get Products by Category**: `GET /api/products/category/:category`
+   - Returns: `{ success: true, data: [ filtered_products ] }`
+   - Role: Used for category filtering and navigation.
+
+4. **Place Order**: `POST /api/orders`
+   - Body: `{ customer_email: string, items: [ { product_id: string, quantity: number } ] }`
+   - Returns: `{ success: true, message: "Order placed successfully!", data: order_details }`
+   - Role: Used at checkout to submit the cart.
+
+5. **Get All Orders**: `GET /api/orders` (Optional/Admin)
+   - Role: Track existing orders.
+
+6. **Health Check**: `GET /api/health`
+   - Role: Display system status indicators in an admin dashboard or footer.
+
+### ✨ Visual & Functional Features:
+- **Dynamic Navbar**: Futuristic glass-morphic header with a floating cart icon and category dropdown.
+- **Hero Section**: High-impact section with a bold call-to-action and floating 3D elements (using Framer Motion).
+- **Product Cards**: Elevate on hover, showing a "Add to Cart" button and price tag.
+- **Shopping Cart**: A slide-out sidebar (Drawer) that manages quantities, shows sub-totals, and links to checkout.
+- **Responsive Design**: Flawless experience across Mobile, Tablet, and Desktop.
+- **Loading States**: Shimmer/Skeleton effects while fetching product data.
+- **Success Notifications**: Toast notifications (e.g., Sonner or React-Hot-Toast) when items are added to the cart or orders are placed.
+
+### 🎯 Objective:
+Create an interface that feels like a premium luxury brand. The code should be modular, with clean separations between components, hooks, and services. Use TypeScript for type safety across the entire application.
